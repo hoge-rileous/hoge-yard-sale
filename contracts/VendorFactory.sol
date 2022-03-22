@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./HogeVendor.sol";
 
 interface IHogeVendor {
-    function initialize(string memory name) external;
+    function initialize(uint buyPrice, uint sellPrice) external;
 }
 
 contract VendorFactory is Context {
@@ -16,13 +16,14 @@ contract VendorFactory is Context {
     event VendorCreated(address indexed creator, address indexed vendor);
     address vendorContract;
 
-    constructor(address vendorAddress) public {
+    constructor(address vendorAddress) {
         vendorContract = vendorAddress;
     }
 
-    function createVendor(string memory name) public returns (address new_vendor) {
+    function createVendor(uint buyPrice, uint sellPrice) public returns (address new_vendor) {
+        //require(buyPrice >= sellPrice, "buyPrice must be larger than sellPrice")
         new_vendor = Clones.clone(vendorContract);
-        IHogeVendor(new_vendor).initialize(name);
+        IHogeVendor(new_vendor).initialize(buyPrice, sellPrice);
         Ownable(new_vendor).transferOwnership(_msgSender());
         emit VendorCreated(_msgSender(), new_vendor);
     }    
