@@ -1,17 +1,18 @@
-# Hoge YardSale: A DeFi Innovation
+# Introducing HOGEVault: A New Tailor-Made Peer-to-Peer DeX
 
-HOGE YardSale is a peer-to-peer DeX. It allows easy creation of vendor contracts for trustless buying and selling HOGE over the counter.
+HOGEVault is a framework for trustless over-the-counter HOGE trades.
 It functions as on-chain orderbook that achieves many of the advantages of a centralized exchange.
-Instead of routing volume through a single centralized liquidity pool, proxy vendors are a cheap and easy way to spin up useful liquidity contracts that are entirely in your ownership and control.
+Instead of routing volume through a single centralized liquidity pool, **Makers** set up *vendor contracts* with fixed buy and sell rates. **Takers** come along and make trades according to the available supply and rates.
 
-The VendorContract is deployed at x.
-The VendorFactory is deployed at y, and allows users to create "proxy vendors" at a low cost.
+HogeVault has a number of advantages over UniSwap:
 
-There are several advantages over UniSwap:
-- Trades happen at a fixed rate, alleviating price impact.
-- Buys and Sells happen at the same time, so instead of a 2% tax on each step, there is a single transfer in which the 2 parties split the 2% tax.
-- Since UniSwap is not an intermediary, there is no .3% swap fee.
-- Gas for a purchase is cheaper.
+- Buys and Sells happen at the same time, so instead of a 2% tax on each step, there is a single transfer in which the 2 parties split the cost of the 2% tax.
+- No .3% swap fee for Uniswap middle-man.
+So already trades on HOGEVault have a 1.3% advantage. But consider further that
+- Trades happen at a fixed rate, meaning price impact is 0%.
+- Gas cost for buying HOGE ~123713, compared to ~250,000 for a Uniswap swap.
+- Gas cost for creating vendor contract 188743, compared to 294,589 for adding LP on Uniswap.
+
 
 # HOW TO USE
 

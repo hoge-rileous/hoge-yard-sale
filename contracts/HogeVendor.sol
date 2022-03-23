@@ -20,25 +20,29 @@ contract HogeVendor is OwnableUpgradeable {
         __Ownable_init();
     }
 
+    receive() external payable {}
+
     function VendorHOGEForSale() public view returns (uint amount) {
         uint allowance = HOGE.allowance(owner(), address(this));
         uint balance = HOGE.balanceOf(owner());
-        amount = allowance > balance ? balance : allowance;
+        amount = (allowance > balance ? balance : allowance).mul(98) / 99;
     }
 
     function VendorHOGEToPurchase() public view returns (uint amount) {
-        amount = address(this).balance.mul(buyPrice);
+        amount = address(this).balance.mul(buyPrice) / 10**9;
     }
 
     function buyHOGEFromVendor() public payable returns (uint amountToBuy) {
-        amountToBuy = msg.value * sellPrice;
+        amountToBuy = msg.value * sellPrice / 10**9;
+        console.log(amountToBuy);
         require (amountToBuy <= VendorHOGEForSale(), "Not enough HOGE to complete order.");
-        HOGE.transferFrom(owner(), _msgSender(), amountToBuy.mul(99) / 100);
+        HOGE.transferFrom(owner(), _msgSender(), amountToBuy.mul(99) / 98);
         return amountToBuy;
     }
 
     function sellHOGEToVendor(uint amountHOGE) public returns (uint ethToPay) {
-        require(amountHOGE <= VendorHOGEToPurchase());
+        require(amountHOGE > 0, "Congratulations, you sold zero HOGE.");
+        require(amountHOGE <= VendorHOGEToPurchase(), "Not enough HOGE available.");
         ethToPay = amountHOGE.div(buyPrice);
         HOGE.transferFrom(_msgSender(), owner(), amountHOGE);
         payable(_msgSender()).transfer(ethToPay);
