@@ -1,54 +1,38 @@
-# Introducing HOGEVault: A New Tailor-Made Peer-to-Peer DeX
+HOGEVault: A New Tailor-Made Peer-to-Peer DeX
 
-> That feel when even Uniswap is too centralized. Where are my pills? - rorih, 19/m/Cali
+> That feel when even Uniswap is too centralized. Where are my fuckin pills?
 
-HOGEVault is a framework for trustless over-the-counter HOGE trades.
-It functions as on-chain orderbook that achieves many of the advantages of a centralized exchange.
-Instead of routing volume through a single centralized liquidity pool, **Makers** set up *vendor contracts* with fixed buy and sell rates. **Takers** come along and make trades according to the available supply and rates.
+                                   - rorih, 19/m/Cali
+
+HOGEVault is a framework for trustless over-the-counter HOGE trades. It functions as on-chain orderbook that achieves many of the advantages of a centralized exchange. Instead of routing volume through a single centralized liquidity pool, **Makers** set up *vendor contracts* with fixed buy and sell rates. **Takers** come along and make trades according to the available supply and rates.
 
 HogeVault has a number of advantages over UniSwap:
 
-- Buys and Sells happen at the same time, so instead of a 2% tax on each step, there is a single transfer. 
-- The 2 parties *split the cost of the 2% tax*. A factor of 99/98 is applied so that recipients get 99% of the HOGE they were expecting (instead of 98%).
-- No .3% swap fee for the Uniswap middle-man. HOGEVault has no profit model whatsoever.
-- Trades happen at a fixed rate, meaning price impact is 0% for any given trade.
-- Gas usage for buying HOGE 123,713, compared to ~250,000 for a Uniswap swap.
-- Gas usage for selling HOGE 104,995, compared to ~250,000 for a Uniswap swap.
-- Gas usage for creating vendor contract 167,447, compared to 294,589 for adding LP on Uniswap.
+* Buys and Sells happen at the same time, so instead of a 2% tax on each step, there is a single transfer.
+* The 2 parties *split the cost of the 2% tax*, meaning they both realize 99% of the value of their order.
+* No .3% swap fee for the Uniswap middle-man. HOGEVault has no profit model whatsoever.
+* Trades happen at a fixed rate, meaning price impact is 0% for any given trade.
+* Gas usage for buying HOGE 125,861, compared to ~250,000 for a Uniswap swap.
+* Gas usage for selling HOGE 106,138, compared to ~250,000 for a Uniswap swap.
+* Gas usage for creating vendor contract 167,447, compared to 294,589 for adding LP on Uniswap.
 
 The only downside is the loss of automatic market-making / price discovery of the xy=k pool. But large HOGEVault Maker positions will create arbitrage opportunities that help stabilize the Uniswap pool.
 
-
 # HOW TO USE
-
-Contracts use prices denominated in HOGE/ETH with no decimal places.
 
 ## Market Makers:
 
-First create a Vendor Contract.
-Call createVendor(buyPrice, sellPrice) on the VendorFactory.
+First create a HogeVendor by calling createVendor(bidPrice, askPrice) on the VendorFactory. Use 0 if you don't want a double-sided order. Prices are in HOGE per ETH using whole numbers. Approximately 46,000,000 at time of writing.
 
-### Sell HOGE
-
-Set an allowance for your vendor contract equal to the amount that you want to sell.
-
-### Buy HOGE.
-Send ETH to your vendor contract.
-
-### Cancel sell
-Zero out your allowance.
-
-### Cancel buy
-Call releaseFunds() on your vendor contract.
+* Change your Ask order size by setting an allowance on the HOGE contract: HOGE.approve(vendor.address, amount_to_sell)
+* Change your Bid order size by sending ETH to the vendor contract or calling vendor.releaseFunds(amountToRemove).
 
 ## Market Takers
 
-Takers first identify a vendor contract to interact with.
+Takers first identify a vendor contract to interact with. The VendorFactory emits VendorCreated events. Then call vendorBid() and vendorAsk() on the individual vendors to get the order sizes.
 
-### Buy HOGE
+* Call buyQuote(amountETH) to find out how much HOGE the vendor will sell you.
+* Call buyHOGE() with that value on the message to execute the buy.
+* Call sellQuote(amountHOGE) to find out how much ETH the vendor will pay you.
+* Call sellHOGE(amountHOGE) to execute the sell. This requires an approve call to HOGE.approve(vendor.address, amountHOGE) in order to succeed.
 
-Call buyHOGE()
-
-### Sell HOGE
-
-Call sellHOGE()
