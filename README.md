@@ -1,8 +1,8 @@
-HOGEVault: A New Tailor-Made Peer-to-Peer DeX
+# HOGEVault: A New Tailor-Made Peer-to-Peer DeX
 
 > That feel when even Uniswap is too centralized. Where are my fuckin pills?
 
-                                   - rorih, 19/m/Cali
+\- rorih, 19/m/Cali
 
 HOGEVault is a framework for trustless over-the-counter HOGE trades. It functions as on-chain orderbook that achieves many of the advantages of a centralized exchange. Instead of routing volume through a single centralized liquidity pool, **Makers** set up *vendor contracts* with fixed buy and sell rates. **Takers** come along and make trades according to the available supply and rates.
 
@@ -29,7 +29,7 @@ First create a HogeVendor by calling createVendor(bidPrice, askPrice) on the Ven
 
 ## Market Takers
 
-Takers first identify a vendor contract to interact with. The VendorFactory emits VendorCreated events. Then call vendorBid() and vendorAsk() on the individual vendors to get the order sizes.
+Takers first identify a vendor contract to interact with. The VendorFactory emits VendorCreated events. Then call vendorBid() and vendorAsk() on the individual vendors to get the overall order sizes.
 
 * Call buyQuote(amountETH) to find out how much HOGE the vendor will sell you.
 * Call buyHOGE() with that value on the message to execute the buy.
