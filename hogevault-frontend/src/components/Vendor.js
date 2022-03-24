@@ -1,53 +1,44 @@
 import React from "react";
 import { ethers } from "ethers";
+import { BuyHOGE } from "./BuyHoge";
+import { SellHOGE } from "./SellHoge";
 
 export class Vendor extends React.Component {
   constructor(props) {
     super(props);
-    this.vendor = props.vendor;
     this.initialState = {
-      bid: ethers.BigNumber.from(0),
-      ask: ethers.BigNumber.from(0),
+      eth: ethers.utils.parseUnits("3100", 18),
+      bid: props.bid,
+      ask: props.ask,
+      name: props.name,
+      owner: props.owner,
+      bidMax: props.bidMax.amountHOGE,
+      askMax: props.askMax.amountETH
     };
     this.state = this.initialState;
   }
 
   render() {
+    let {name, owner, bid, ask, eth, bidMax, askMax} = this.state;
 
-    const bid = ethers.utils.formatUnits(this.state.bid, 0);
-    const ask = ethers.utils.formatUnits(this.state.ask, 0);
+    const bidSizeMax = ethers.utils.formatUnits(bidMax, 9).substring(0,9);
+    const askSizeMax = ethers.utils.formatEther(askMax).substring(0,9);    
 
+    const bidPrice = ethers.utils.formatUnits(eth.div(bid)).substring(0,9);
+    const askPrice = ethers.utils.formatUnits(eth.div(ask)).substring(0,9);
 
     return (
       <div className="flex flex-col">
-        Hi. {bid} --- {ask}
+        <hr/>
+        {name}, owner: {owner}
+        <p/>
+        Bid price: {bidPrice}, Ask price: {askPrice} <p/>
+        <SellHOGE sellHOGE={this.props.callbacks.sell} max={bidSizeMax} />
+        <BuyHOGE buyHOGE={this.props.callbacks.buy} max={askSizeMax}/>
       </div>
     );
   }
 
-  componentDidMount() {
-    console.log("HI!");
-    this._startPollingData();
-  }
-  _startPollingData() {
-    this._pollDataInterval = setInterval(() => this._updateBalances(), 1000);
-    this._updateBalances();
-  }
-
-  _stopPollingData() {
-    clearInterval(this._pollDataInterval);
-    this._pollDataInterval = undefined;
-  }
-
-  async _updateBalances() {
-    const bid = await this.vendor.bid();
-    const ask = await this.vendor.ask();
-    console.log(bid, ask)
-    this.setState({
-     bid: bid,
-     ask: ask
-   });
-  }
 
 
 }

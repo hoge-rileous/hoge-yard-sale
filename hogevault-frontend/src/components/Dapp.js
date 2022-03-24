@@ -12,7 +12,8 @@ import { Vendor } from "./Vendor";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 const factoryAddress = require("../contracts/factory-address.json");
-const vendorAddresses = require("../contracts/vendors.json");
+const vendorAddressJSON = require("../contracts/vendors.json");
+const hogeAddress = "0xfad45e47083e4607302aa43c65fb3106f1cd7607";
 
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 
@@ -25,8 +26,10 @@ export class Dapp extends React.Component {
       tokenData: undefined,
       selectedAddress: undefined,
       initialized: false,
-      vendors:vendorAddresses.addresses,
-      vendorContracts:[],
+      vendorAddresses:vendorAddressJSON.addresses,
+      vendors:[],
+      hogeBalance: ethers.BigNumber.from(0),
+      ethBalance: ethers.BigNumber.from(0),
       txBeingSent: undefined,
       transactionError: undefined,
       networkError: undefined,
@@ -39,8 +42,8 @@ export class Dapp extends React.Component {
 
   render() {
 
-    const hogeBalance = "0.0";
-    const hoge2Balance = "0.0";//ethers.utils.formatUnits(this.state.hoge2Balance, 9);
+    const hogeBalance = ethers.utils.formatUnits(this.state.hogeBalance, 9);
+    const ethBalance = ethers.utils.formatEther(this.state.ethBalance);
 
     let errorMsg = null
     if (this.state.transactionError) {
@@ -53,7 +56,7 @@ export class Dapp extends React.Component {
 
     return (
       <div className="p-10 h-full w-full inline-flex flex-col dark:text-gray-200 bg-gray-900 items-center justify-between gap-8">
-        <div className="text-2xl text-center text-white">HOGE<sup>2</sup> UN/WRAPPING STATION</div>
+        <div className="text-2xl text-center text-white">HOGEVault</div>
 
         {(window.ethereum === undefined) &&
           <div className="border bg-red-600 rounded text-center p-2 flex justify-center text-1xl flex-col items-center">
@@ -64,17 +67,16 @@ export class Dapp extends React.Component {
         <div className="text-center flex items-center justify-center h-full">
           <div className="h-auto font-bold p-1 bg-orange-300 rounded-xl text-black flex flex-col gap-2 items-center justify-between">
             <img src="hoge.png" alt="Hoge" />
-            <div> Create a Vendor</div>
+            <div>Vendor Factory</div>
             {this.state.initialized && <CreateVendor createVendor={(bid,ask) => this._createVendor(bid, ask)} />}
           </div>
           <div className="flex items-center justify-center w-1/6"> <img className="inverted w-2/3" src="arrow.png" /></div>
 
           <div className="h-auto font-bold p-1 bg-cyan-200 rounded-xl text-black flex flex-col gap-2 items-center justify-between">
             <img src="hoge2.png" alt="Hoge2" />
-            <div>CONTRACTS: </div>
-            {this.state.vendorContracts.map((vendorContract) => {
-              return <Vendor vendor={vendorContract} />})}
-            {this.state.vendorContracts.length}
+            <div>Vendors </div>
+            {this.state.vendors.map((vendor) => {
+              return <Vendor {...vendor.vendorData} />})}
           </div>
         </div>
         <div className="row">
@@ -96,15 +98,18 @@ export class Dapp extends React.Component {
           <div className="text-xs w-auto break-words">
             <a className="underline" target="_blank" href={`https://etherscan.io/address/` + this.state.selectedAddress}>{this.state.selectedAddress}</a>
           </div>
+          <div className="text-sm">ETH balance: {parseFloat(ethBalance).toFixed(2)}</div>
+          <div className="text-sm">HOGE balance: {parseFloat(hogeBalance).toFixed(2)}</div>
         </div> : <ConnectWallet
           connectWallet={() => this._connectWallet()}
           networkError={this.state.networkError}
           dismiss={() => this._dismissNetworkError()}
         />}
         <div className="text-gray-400 text-xs text-center">
-          HOGE<sup>2</sup> is a tax-free token backed 1-to-1 by HOGE. It is compatible with <a href="https://app.uniswap.org/#/swap?use=V3&inputCurrency=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&outputCurrency=0x25699C4b6bbF148A8FDb4b5823e8D9BbA44C8090&chain=mainnet">Uniswap V3</a> and makes it cheaper to speculate on HOGE without touching a centralized exchange.
-          Please see the code on <a className="underline" href="https://etherscan.io/address/0x25699c4b6bbf148a8fdb4b5823e8d9bba44c8090#code#F1#L1">EtherScan</a>.
-          Wrapping requires an "approve" step due to line 19.</div>
+          HogeVAULT is a peer-to-peer OTC DeX allowing for trustless trades for cheap.
+          <a className="underline" target="_blank" href={"https://github.com/hoge-rileous/HOGEVault"}>SOURCE</a>
+
+</div>
       </div>
     );
   }
@@ -159,14 +164,101 @@ export class Dapp extends React.Component {
       this._provider.getSigner(0)
     );
 
-    console.log(this.state.vendors);
-    this.setState({vendorContracts: this.state.vendors.map((vendorAddress) => 
-      new ethers.Contract(
-        vendorAddress,
-        HogeVendorArtifact.abi,
-        this._provider.getSigner(0)
-      ))});
-    console.log(this.state);
+    this._hoge = new ethers.Contract(
+      hogeAddress,
+      hogeABI,
+      this._provider.getSigner(0)
+    );
+
+
+    Promise.all(
+      this.state.vendorAddresses.map(async (vendorAddress, i) => {
+        let contract = new ethers.Contract(
+                        vendorAddress,
+                        HogeVendorArtifact.abi,
+                        this._provider.getSigner(0)
+                      );
+        let vendor = {address: vendorAddress,
+                      contract: contract};
+        const bid = await vendor.contract.bid();
+        const ask = await vendor.contract.ask();
+        const owner = await vendor.contract.owner();
+        const bidMax = await vendor.contract.vendorBid();
+        const askMax = await vendor.contract.vendorAsk();
+        vendor.vendorData = {name: "Vendor " + String(i), 
+                    owner,
+                      bid, ask, bidMax, askMax};
+        const buy = (ethAmount) => {this._buyHOGE(contract, ethAmount)};
+        const sell = (hogeAmount) => {this._sellHOGE(contract, hogeAmount)};
+        vendor.vendorData.callbacks = {buy, sell};
+        return vendor;
+      })).then((newVendors => {
+        this.setState({vendors: newVendors});
+      }));
+  }
+
+  async _buyHOGE(contract, amountETH) {
+    try {
+
+      this._dismissTransactionError();
+
+      amountETH = ethers.utils.parseEther(amountETH);
+      const tx = await contract.buyHOGE({value:amountETH});
+
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      console.log(receipt);
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+      await this._updateBalances();
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+  async _sellHOGE(contract, amountHOGE) {
+    try {
+
+      this._dismissTransactionError();
+
+      amountHOGE = ethers.utils.parseUnits(amountHOGE, 9);
+
+      const allowance = await this._hoge.allowance(this.state.selectedAddress, contract.address);
+      console.log(allowance.toString());
+      console.log(amountHOGE.toString())
+      if (amountHOGE.gt(allowance)) {
+        await this._approveHoge(contract);
+      }
+
+      const tx = await contract.sellHOGE(amountHOGE);
+
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      console.log(receipt);
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+      await this._updateBalances();
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
   }
 
   async _createVendor(bid,ask) {
@@ -200,6 +292,32 @@ export class Dapp extends React.Component {
     }
   }
 
+  async _approveHoge(contract) {
+    try {
+
+      this._dismissTransactionError();
+      const amount = ethers.constants.MaxUint256;
+      const tx = await this._hoge.approve(contract.address, amount);
+      this.setState({ txBeingSent: tx.hash });
+
+      const receipt = await tx.wait();
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+      await this._updateBalances();
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+
   _startPollingData() {
     this._pollDataInterval = setInterval(() => this._updateBalances(), 1000);
     this._updateBalances();
@@ -211,13 +329,14 @@ export class Dapp extends React.Component {
   }
 
   async _updateBalances() {
-    this.state.vendorContracts.forEach(async (vendorContract) => {
-      const ask = await vendorContract.ask();
+    const hogeBalance = await this._hoge.balanceOf(this.state.selectedAddress);
+    const ethBalance = await ethers.getDefaultProvider().getBalance(this.state.selectedAddress);
+
+    this.setState({
+      hogeBalance,
+      ethBalance,
     });
   }
-
-
-
 
   // This method just clears part of the state.
   _dismissTransactionError() {
