@@ -30,23 +30,29 @@ async function main() {
 
   console.log("factory address:", vendorFactory.address);
 
-  vendors = [];
-    const vendorAddressTxn = await vendorFactory.createVendor('100000000', '100000000');
+/*  vendors = [];
+    const vendorAddressTxn = await vendorFactory.createVendor('50000000', '400000000');
     const vendorCreationRcpt = await vendorAddressTxn.wait();
     const createEvent = vendorCreationRcpt.events.find(event => event.event === 'VendorCreated');
     const vendor1Address = createEvent.args.vendor; 
     vendors.push(vendor1Address);   
 
-    const vendor2AddressTxn = await vendorFactory.createVendor('101000000', '90000000');
+    await deployer.sendTransaction({
+      to: vendor1Address,
+      value: ethers.utils.parseEther("1.0")
+    });
+
+    const vendor2AddressTxn = await vendorFactory.createVendor('70000000', '30000000');
     const vendor2CreationRcpt = await vendor2AddressTxn.wait();
     const createEvent2 = vendor2CreationRcpt.events.find(event => event.event === 'VendorCreated');
     const vendor2Address = createEvent2.args.vendor; 
     vendors.push(vendor2Address);   
 
-  console.log("Vendor1 address:", vendor1Address);
+  console.log("Vendor1 address:", vendor1Address);*/
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hogeVendor, vendorFactory, vendors);
+  //saveFrontendFiles(hogeVendor, vendorFactory, vendors);
+  saveFrontendFiles(hogeVendor, vendorFactory, []);
 }
 
 function saveFrontendFiles(hogeVendor, vendorFactory, vendors) {
@@ -72,11 +78,11 @@ function saveFrontendFiles(hogeVendor, vendorFactory, vendors) {
     JSON.stringify({ address: vendorFactory.address }, undefined, 2)
   );
 
-  fs.writeFileSync(
+/*  fs.writeFileSync(
     contractsDir + "/vendors.json",
     JSON.stringify({ addresses: vendors }, undefined, 2)
   );
-  
+  */
 }
 
 main()

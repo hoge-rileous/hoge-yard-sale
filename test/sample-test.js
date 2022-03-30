@@ -81,12 +81,13 @@ describe("VendorFactory", async (accounts) => {
     vendorAsk = await vendor1.vendorAsk();
     expect(vendorAsk[0]).to.equal(bn_hoge);
     const ethValue = vendorAsk[1];
+    const oneEth = ethers.BigNumber.from("1000000000000000000");
     //This is the size of the Ask in ETH
-    expect(ethValue).to.equal("989898989898989898");
+    expect(ethValue).to.equal(oneEth.mul(100).div(99));
 
     //Larger order does not fill.
     const acct2_vendor1 = await vendor1.connect(accounts[2]);
-    await expect(acct2_vendor1.buyHOGE({value: ethValue.add(100)}))
+    await expect(acct2_vendor1.buyHOGE({value: ethValue.mul(101).div(100)}))
       .to.be.revertedWith('Not enough HOGE to complete order.');
 
     //Full ask size fills
@@ -99,7 +100,7 @@ describe("VendorFactory", async (accounts) => {
 
     //Release funds back to owner
     const vendor_bal_after_buy = await vendor1.provider.getBalance(vendor1.address);
-    expect(vendor_bal_after_buy).to.equal(ethValue);
+    expect(vendor_bal_after_buy).to.equal(oneEth);
     await vendor1.connect(whitebit_signer).releaseFunds(vendor_bal_after_buy);
     const vendor_bal_after_release = await vendor1.provider.getBalance(vendor1.address);
     expect(vendor_bal_after_release).to.equal(0);
@@ -112,7 +113,7 @@ describe("VendorFactory", async (accounts) => {
     vendorBid = await vendor1.vendorBid();
     const hogeToSell = vendorBid[0];
     const ethFromSell = vendorBid[1];
-    expect(hogeToSell).to.equal(bn_hoge.mul(99).div(98));
+    expect(hogeToSell).to.equal(bn_hoge);
 
     //top off account 2 HOGE balance
     await hoge.connect(whitebit_signer).transfer(accounts[2].address, bn_hoge);
@@ -131,6 +132,7 @@ describe("VendorFactory", async (accounts) => {
     const hoge_bal_after_sell = await hoge.balanceOf(accounts[2].address);
     const gain = seller_bal_after_sell.sub(seller_bal_before_sell);
     //Ether gained is +-2 same as quoted, minus gas
+
     expect(gain.gte(ethFromSell.sub(gas_cost).sub(2))).to.equal(true);
 
     await vendor1.connect(whitebit_signer).kill();

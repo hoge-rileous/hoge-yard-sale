@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
 require("hardhat-gas-reporter");
 require('dotenv').config()
 
@@ -25,6 +26,14 @@ module.exports = {
       forking: {
         url: process.env.alchemyAPI
       } 
+    },
+    mainnet: {
+      url: process.env.alchemyAPI,
+      accounts: [process.env.pk]
     }
+
+  },
+  etherscan: {
+    apiKey: "WHIV2FAKITRJUY67GSV6SY8SYNTMJQ4VHH"
   }
 };

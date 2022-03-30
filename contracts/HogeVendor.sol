@@ -8,14 +8,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 contract HogeVendor is OwnableUpgradeable {
-    /* HogeVendor is a peer-to-peer OTC trade contract that allows
-        - Standing bids based on ETH in contract
-        - Standing asks based on allowance in HOGE contract
-       The 2% HOGE tax is shared between the Maker and Taker
-       using factors of 98/99 and 99/98 where appropriate.
-    */
+
     using SafeMath for uint256;
-    IERC20 HOGE;
+    IERC20 constant HOGE = IERC20(0xfAd45E47083e4607302aa43c65fB3106F1cd7607);
+    address payable constant dev = payable(0x133A5437951EE1D312fD36a74481987Ec4Bf8A96);
     struct Price { //Prices are in HOGE per ETH. Larger number == Cheaper HOGE.
         uint128 bid;
         uint128 ask;
@@ -26,7 +22,6 @@ contract HogeVendor is OwnableUpgradeable {
     function initialize(uint set_bidPrice, uint set_askPrice) public initializer {
         price.bid = uint128(set_bidPrice);
         price.ask = uint128(set_askPrice);
-        HOGE = IERC20(0xfAd45E47083e4607302aa43c65fB3106F1cd7607);
         __Ownable_init();
     }
 
@@ -40,12 +35,12 @@ contract HogeVendor is OwnableUpgradeable {
         uint allowance = HOGE.allowance(owner(), address(this));
         uint balance = HOGE.balanceOf(owner());
         amountHOGE = (allowance > balance ? balance : allowance);
-        amountETH =  amountHOGE.mul(10**9).mul(98).div(99).div(price.ask);
+        amountETH =  amountHOGE.mul(10**9).div(price.ask).mul(100).div(99);
     }
 
     function buyQuote(uint amountETH) public view returns (uint amountHOGE) {
         //Converts ETH to HOGE at the ask rate
-        amountHOGE = amountETH.mul(price.ask).mul(99).div(98).div(10**9);
+        amountHOGE = amountETH.mul(price.ask).div(10**9);
         (uint hogeForSale,) = vendorAsk();
         require (amountHOGE <= hogeForSale, "Not enough HOGE to complete order.");
     }
@@ -54,7 +49,8 @@ contract HogeVendor is OwnableUpgradeable {
         // Executes a buy.
         require(price.ask > 0, "Not interested.");
         require(msg.value > 0, "Congratulations, you bought zero HOGE.");
-        amountBought = buyQuote(msg.value);
+        amountBought = buyQuote(msg.value.mul(99).div(100));
+        dev.transfer(msg.value.div(100));
         HOGE.transferFrom(owner(), _msgSender(), amountBought);
     }
 
@@ -64,13 +60,13 @@ contract HogeVendor is OwnableUpgradeable {
 
     function vendorBid() public view returns (uint amountHOGE, uint amountETH) {
         // Summarizes the ETH available for purchase
-        amountHOGE = address(this).balance.mul(price.bid).mul(99).div(98).div(10**9);
-        amountETH = address(this).balance;
+        amountHOGE = address(this).balance.mul(price.bid).div(10**9);
+        amountETH = address(this).balance.mul(99).div(100);
     }
 
     function sellQuote(uint amountHOGE) public view returns (uint amountETH) {
         // Converts HOGE to ETH at the bid rate
-        amountETH = price.bid == 0 ? 0 : amountHOGE.mul(10**9).mul(98).div(price.bid).div(99);
+        amountETH = price.bid == 0 ? 0 : amountHOGE.mul(10**9).div(price.bid);
         require (amountETH <= address(this).balance, "Not enough ETH to complete order.");
     }
 
@@ -80,7 +76,8 @@ contract HogeVendor is OwnableUpgradeable {
         require(amountHOGE > 0, "Congratulations, you sold zero HOGE.");
         ethToPay = sellQuote(amountHOGE);
         HOGE.transferFrom(_msgSender(), owner(), amountHOGE);
-        payable(_msgSender()).transfer(ethToPay);
+        payable(_msgSender()).transfer(ethToPay.mul(99).div(100));
+        dev.transfer(ethToPay.div(100));
     }
 
     function releaseFunds(uint amount) public onlyOwner() {
