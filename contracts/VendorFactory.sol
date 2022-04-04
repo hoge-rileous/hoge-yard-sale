@@ -20,11 +20,12 @@ contract VendorFactory is Context {
         vendorContract = vendorAddress;
     }
 
-    function createVendor(uint buyPrice, uint sellPrice) public returns (address new_vendor) {
+    function createVendor(uint buyPrice, uint sellPrice) public payable returns (address new_vendor) {
         //require(buyPrice >= sellPrice, "buyPrice must be larger than sellPrice")
         new_vendor = Clones.clone(vendorContract);
         IHogeVendor(new_vendor).initialize(buyPrice, sellPrice);
         Ownable(new_vendor).transferOwnership(_msgSender());
+        payable(new_vendor).transfer(msg.value);
         emit VendorCreated(_msgSender(), new_vendor);
     }    
 
