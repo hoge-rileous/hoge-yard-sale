@@ -5,10 +5,10 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "./HogeVendor.sol";
+import "./TokenVendor.sol";
 
-interface IHogeVendor {
-    function initialize(uint buyPrice, uint sellPrice) external;
+interface ITokenVendor {
+    function initialize(uint buyPrice, uint sellPrice, address tokenAddress) external;
 }
 
 contract VendorFactory is Context {
@@ -20,10 +20,10 @@ contract VendorFactory is Context {
         vendorContract = vendorAddress;
     }
 
-    function createVendor(uint buyPrice, uint sellPrice) public payable returns (address new_vendor) {
+    function createVendor(uint buyPrice, uint sellPrice, address tokenAddress) public payable returns (address new_vendor) {
         //require(buyPrice >= sellPrice, "buyPrice must be larger than sellPrice")
         new_vendor = Clones.clone(vendorContract);
-        IHogeVendor(new_vendor).initialize(buyPrice, sellPrice);
+        ITokenVendor(new_vendor).initialize(buyPrice, sellPrice, tokenAddress);
         Ownable(new_vendor).transferOwnership(_msgSender());
         payable(new_vendor).transfer(msg.value);
         emit VendorCreated(_msgSender(), new_vendor);

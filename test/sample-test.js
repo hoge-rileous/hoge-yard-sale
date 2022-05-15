@@ -4,6 +4,7 @@ const { expect } = require("chai");
 
 //LARP as whitebit because why not.
 let whitebit = "0x39F6a6C85d39d5ABAd8A398310c52E7c374F2bA3";
+let hogeAddr = "0xfAd45E47083e4607302aa43c65fB3106F1cd7607";
 const erc20 = require("../contracts/erc20.json");
 
 describe("VendorFactory", async (accounts) => {
@@ -32,7 +33,7 @@ describe("VendorFactory", async (accounts) => {
 
 
   it("should deploy proxy vendor from factory.", async function () {
-    const hoge = await ethers.getContractAt(erc20, "0xfad45e47083e4607302aa43c65fb3106f1cd7607");
+    const hoge = await ethers.getContractAt(erc20, hogeAddr);
 
     const accounts = await ethers.getSigners();
     const provider = ethers.provider;
@@ -40,7 +41,7 @@ describe("VendorFactory", async (accounts) => {
     const whitebit_signer = await ethers.getSigner(whitebit);
 
 
-    const HogeVendor = await ethers.getContractFactory("HogeVendor");
+    const HogeVendor = await ethers.getContractFactory("TokenVendor");
     const hogeVendor = await HogeVendor.deploy();
     await hogeVendor.deployed();
 
@@ -50,24 +51,24 @@ describe("VendorFactory", async (accounts) => {
 
     const bn_hoge = ethers.utils.parseUnits('100000000', 9);
 
-    const vendorAddressTxn = await vendorFactory.connect(whitebit_signer).createVendor('100000000', '100000000', {value:ethers.utils.parseEther("1")});
+    const vendorAddressTxn = await vendorFactory.connect(whitebit_signer).createVendor('100000000', '100000000', hogeAddr, {value:ethers.utils.parseEther("1")});
     const vendorCreationRcpt = await vendorAddressTxn.wait();
     const createEvent = vendorCreationRcpt.events.find(event => event.event === 'VendorCreated');
     const rorihVendorAddress = createEvent.args.vendor;    
 
-    const vendorAddressTxn2 = await vendorFactory.connect(accounts[2]).createVendor(0, 0);
+    const vendorAddressTxn2 = await vendorFactory.connect(accounts[2]).createVendor(0, 0, hogeAddr);
     const vendorCreationRcpt2 = await vendorAddressTxn2.wait();
     const createEvent2 = vendorCreationRcpt2.events.find(event => event.event === 'VendorCreated');
     const nickVendorAddress = createEvent2.args.vendor;
 
-    const vendor1 = await ethers.getContractAt("HogeVendor", rorihVendorAddress);
+    const vendor1 = await ethers.getContractAt("TokenVendor", rorihVendorAddress);
     const address1 = await vendor1.owner();
     expect(address1).to.equal(whitebit);
 
     const ask = await vendor1.ask();
     const bid = await vendor1.bid();
 
-    const vendor2 = await ethers.getContractAt("HogeVendor", nickVendorAddress);
+    const vendor2 = await ethers.getContractAt("TokenVendor", nickVendorAddress);
     const address2 = await vendor2.owner();
     expect(address2).to.equal(accounts[2].address);
 
@@ -92,12 +93,12 @@ describe("VendorFactory", async (accounts) => {
 
     //Larger order does not fill.
     const acct2_vendor1 = await vendor1.connect(accounts[2]);
-    await expect(acct2_vendor1.buyHOGE({value: ethValue.mul(101).div(100)}))
+    await expect(acct2_vendor1.buyToken({value: ethValue.mul(101).div(100)}))
       .to.be.revertedWith("Amount exceeds Ask size.");
 
     //Full ask size fills
     const vendor_bal_before_buy = await vendor1.provider.getBalance(vendor1.address);
-    await acct2_vendor1.buyHOGE({value: ethValue});
+    await acct2_vendor1.buyToken({value: ethValue});
     const hogeBought = await hoge.balanceOf(accounts[2].address);
     expect(hogeBought).to.equal("98000202641414841");
     vendorAsk = await vendor1.vendorAsk();
@@ -119,15 +120,15 @@ describe("VendorFactory", async (accounts) => {
     //top off account 2 HOGE balance
     await hoge.connect(whitebit_signer).transfer(accounts[2].address, bn_hoge);
 
-    await expect(acct2_vendor1.sellHOGE(hogeToSell)).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+    await expect(acct2_vendor1.sellToken(hogeToSell)).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
     //Seller approves HOGE on contract.
     await hoge.connect(accounts[2]).approve(vendor1.address, hogeToSell);
 
     //Sell enough HOGE to clear out all ETH.
     const seller_bal_before_sell = await vendor1.provider.getBalance(accounts[2].address);
     const hoge_bal_before_sell = await hoge.balanceOf(accounts[2].address);
-    //await expect(acct2_vendor1.sellHOGE(hogeToSell.mul(3))).to.be.revertedWith("Amount exceeds Bid size.");
-    const sell_txn = await acct2_vendor1.sellHOGE(hogeToSell);
+    //await expect(acct2_vendor1.sellToken(hogeToSell.mul(3))).to.be.revertedWith("Amount exceeds Bid size.");
+    const sell_txn = await acct2_vendor1.sellToken(hogeToSell);
     const sell_rcpt = await sell_txn.wait();
     const gas_cost = sell_rcpt.cumulativeGasUsed.mul(sell_rcpt.effectiveGasPrice);
     const seller_bal_after_sell = await vendor1.provider.getBalance(accounts[2].address);
