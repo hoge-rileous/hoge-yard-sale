@@ -12,7 +12,7 @@ contract HogeVendor is OwnableUpgradeable {
     using SafeMath for uint256;
     IERC20 constant HOGE = IERC20(0xfAd45E47083e4607302aa43c65fB3106F1cd7607);
     address payable constant dev = payable(0x133A5437951EE1D312fD36a74481987Ec4Bf8A96);
-    struct Price { //Prices are in HOGE per ETH. Larger number == Cheaper HOGE.
+    struct Price { 
         uint128 bid;
         uint128 ask;
     }
@@ -42,7 +42,7 @@ contract HogeVendor is OwnableUpgradeable {
         //Converts ETH to HOGE at the ask rate
         amountHOGE = amountETH.mul(price.ask).div(10**9);
         (uint hogeForSale,) = vendorAsk();
-        require (amountHOGE <= hogeForSale, "Not enough HOGE to complete order.");
+        require (amountHOGE <= hogeForSale, "Amount exceeds Ask size.");
     }
 
     function buyHOGE() public payable returns (uint amountBought) {
@@ -67,7 +67,7 @@ contract HogeVendor is OwnableUpgradeable {
     function sellQuote(uint amountHOGE) public view returns (uint amountETH) {
         // Converts HOGE to ETH at the bid rate
         amountETH = price.bid == 0 ? 0 : amountHOGE.mul(10**9).div(price.bid);
-        require (amountETH <= address(this).balance, "Not enough ETH to complete order.");
+        require (amountETH <= address(this).balance, "Amount exceeds Bid size.");
     }
 
     function sellHOGE(uint amountHOGE) public returns (uint ethToPay) {

@@ -81,7 +81,8 @@ describe("VendorFactory", async (accounts) => {
 
     
     //Approval step makes HOGE available for sale
-    await hoge.connect(whitebit_signer).approve(vendor1.address, bn_hoge);
+    const approve_tx = await hoge.connect(whitebit_signer).approve(vendor1.address, bn_hoge);
+    await approve_tx.wait();
     vendorAsk = await vendor1.vendorAsk();
     expect(vendorAsk[0]).to.equal(bn_hoge);
     const oneEth = ethers.BigNumber.from("1000000000000000000");
