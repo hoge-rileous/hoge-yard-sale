@@ -49,6 +49,8 @@ describe("VendorFactory", async (accounts) => {
     const vendorFactory = await VendorFactory.deploy(hogeVendor.address);
     await vendorFactory.deployed();
 
+    await vendorFactory.addSupport(hogeAddr, 2);
+
     const bn_hoge = ethers.utils.parseUnits('100000000', 9);
 
     const vendorAddressTxn = await vendorFactory.connect(whitebit_signer).createVendor('100000000', '100000000', hogeAddr, {value:ethers.utils.parseEther("1")});

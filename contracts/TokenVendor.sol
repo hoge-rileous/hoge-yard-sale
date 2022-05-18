@@ -16,16 +16,15 @@ contract TokenVendor is OwnableUpgradeable {
         uint128 bid;
         uint128 ask;
     }
+    uint8 tax;
     Price price;
     receive() external payable {}
 
-    function initialize1(address set_token) public initializer {
-        token = IERC20(set_token);
-    }
-
-    function initialize2(uint set_bidPrice, uint set_askPrice) public initializer {
+    function initialize(uint set_bidPrice, uint set_askPrice, address set_token, uint8 set_tax) public initializer {
         price.bid = uint128(set_bidPrice);
         price.ask = uint128(set_askPrice);
+        token = IERC20(set_token);
+        tax = set_tax;
         __Ownable_init();
     }
 
