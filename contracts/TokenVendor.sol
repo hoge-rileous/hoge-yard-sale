@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 contract TokenVendor is OwnableUpgradeable {
 
     using SafeMath for uint256;
-    IERC20 token; // = IERC20(0xfAd45E47083e4607302aa43c65fB3106F1cd7607);
+    IERC20 token;
     address payable constant dev = payable(0x133A5437951EE1D312fD36a74481987Ec4Bf8A96);
     struct Price { 
         uint128 bid;
@@ -28,32 +28,36 @@ contract TokenVendor is OwnableUpgradeable {
         __Ownable_init();
     }
 
+    function taxed (uint amount) public view returns (uint taxedAmount) {
+        taxedAmount = amount.mul(100 - tax).div(100);
+    }
+
     function ask() public view returns (uint128) {
         return price.ask;
     }
 
-    function vendorAsk() public view returns (uint amounttoken, uint amountETH) {
+    function vendorAsk() public view returns (uint amountToken, uint amountETH) {
         //Summarizes the token available for purchase
         if (price.ask == 0) return (0,0);
         uint allowance = token.allowance(owner(), address(this));
         uint balance = token.balanceOf(owner());
-        amounttoken = (allowance > balance ? balance : allowance);
-        amountETH =  amounttoken.mul(10**9).div(price.ask).mul(100).div(99);
+        amountToken = (allowance > balance ? balance : allowance);
+        amountETH =  amountToken.mul(10**9).div(price.ask);
     }
 
-    function buyQuote(uint amountETH) public view returns (uint amounttoken) {
+    function buyQuote(uint amountETH) public view returns (uint amountToken) {
         //Converts ETH to token at the ask rate
-        amounttoken = amountETH.mul(price.ask).div(10**9);
+        amountToken = amountETH.mul(price.ask).div(10**9);
         (uint tokenForSale,) = vendorAsk();
-        require (amounttoken <= tokenForSale, "Amount exceeds Ask size.");
+        require (amountToken <= tokenForSale, "Amount exceeds Ask size.");
     }
 
     function buyToken() public payable returns (uint amountBought) {
         // Executes a buy.
         require(price.ask > 0, "Not interested.");
         require(msg.value > 0, "Congratulations, you bought zero token.");
-        amountBought = buyQuote(msg.value.mul(99).div(100));
-        dev.transfer(msg.value.div(100));
+        amountBought = buyQuote(msg.value);
+        dev.transfer(msg.value.mul(tax).div(100));
         token.transferFrom(owner(), _msgSender(), amountBought);
     }
 
@@ -61,26 +65,26 @@ contract TokenVendor is OwnableUpgradeable {
         return price.bid;
     }
 
-    function vendorBid() public view returns (uint amounttoken, uint amountETH) {
+    function vendorBid() public view returns (uint amountToken, uint amountETH) {
         // Summarizes the ETH available for purchase
-        amounttoken = address(this).balance.mul(price.bid).div(10**9);
-        amountETH = address(this).balance.mul(99).div(100);
+        amountToken = address(this).balance.mul(price.bid).div(10**9);
+        amountETH = address(this).balance;
     }
 
-    function sellQuote(uint amounttoken) public view returns (uint amountETH) {
+    function sellQuote(uint amountToken) public view returns (uint amountETH) {
         // Converts token to ETH at the bid rate
-        amountETH = price.bid == 0 ? 0 : amounttoken.mul(10**9).div(price.bid);
+        amountETH = price.bid == 0 ? 0 : amountToken.mul(10**9).div(price.bid);
         require (amountETH <= address(this).balance, "Amount exceeds Bid size.");
     }
 
-    function sellToken(uint amounttoken) public returns (uint ethToPay) {
+    function sellToken(uint amountToken) public returns (uint ethToPay) {
         // Executes a sell.
         require(price.bid > 0, "Not interested.");
-        require(amounttoken > 0, "Congratulations, you sold zero token.");
-        ethToPay = sellQuote(amounttoken);
-        token.transferFrom(_msgSender(), owner(), amounttoken);
-        payable(_msgSender()).transfer(ethToPay.mul(99).div(100));
-        dev.transfer(ethToPay.div(100));
+        require(amountToken > 0, "Congratulations, you sold zero token.");
+        ethToPay = sellQuote(amountToken);
+        token.transferFrom(_msgSender(), owner(), amountToken);
+        payable(_msgSender()).transfer(taxed(ethToPay));
+        dev.transfer(ethToPay.mul(tax).div(100));
     }
 
     function releaseFunds(uint amount) public onlyOwner() {

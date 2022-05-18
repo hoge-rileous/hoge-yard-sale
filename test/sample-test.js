@@ -91,7 +91,7 @@ describe("VendorFactory", async (accounts) => {
     const oneEth = ethers.BigNumber.from("1000000000000000000");
     const ethValue = vendorAsk[1];
     //This is the size of the Ask in ETH
-    expect(ethValue).to.equal(oneEth.mul(100).div(99));
+    expect(ethValue).to.equal(oneEth);
 
     //Larger order does not fill.
     const acct2_vendor1 = await vendor1.connect(accounts[2]);
@@ -102,13 +102,13 @@ describe("VendorFactory", async (accounts) => {
     const vendor_bal_before_buy = await vendor1.provider.getBalance(vendor1.address);
     await acct2_vendor1.buyToken({value: ethValue});
     const hogeBought = await hoge.balanceOf(accounts[2].address);
-    expect(hogeBought).to.equal("98000202641414841");
+    expect(hogeBought).to.equal("98000202641414840");
     vendorAsk = await vendor1.vendorAsk();
-    expect(vendorAsk[0]).to.equal(1); // rounding dust
+    expect(vendorAsk[0]).to.equal(0); // rounding dust
 
     //Release funds back to owner
     const vendor_bal_after_buy = await vendor1.provider.getBalance(vendor1.address);
-    expect(vendor_bal_after_buy).to.equal(oneEth.mul(2));
+    expect(vendor_bal_after_buy).to.equal("1980000000000000000");
     await vendor1.connect(whitebit_signer).releaseFunds(vendor_bal_after_buy);
     const vendor_bal_after_release = await vendor1.provider.getBalance(vendor1.address);
     expect(vendor_bal_after_release).to.equal(0);
@@ -129,17 +129,14 @@ describe("VendorFactory", async (accounts) => {
     //Sell enough HOGE to clear out all ETH.
     const seller_bal_before_sell = await vendor1.provider.getBalance(accounts[2].address);
     const hoge_bal_before_sell = await hoge.balanceOf(accounts[2].address);
-    //await expect(acct2_vendor1.sellToken(hogeToSell.mul(3))).to.be.revertedWith("Amount exceeds Bid size.");
+    await expect(acct2_vendor1.sellToken(hogeToSell.mul(101).div(100))).to.be.revertedWith("Amount exceeds Bid size.");
     const sell_txn = await acct2_vendor1.sellToken(hogeToSell);
     const sell_rcpt = await sell_txn.wait();
     const gas_cost = sell_rcpt.cumulativeGasUsed.mul(sell_rcpt.effectiveGasPrice);
     const seller_bal_after_sell = await vendor1.provider.getBalance(accounts[2].address);
     const hoge_bal_after_sell = await hoge.balanceOf(accounts[2].address);
     const gain = seller_bal_after_sell.sub(seller_bal_before_sell);
-    //Ether gained is +-2 same as quoted, minus gas
-
-    expect(gain.gte(ethFromSell.sub(gas_cost).sub(2))).to.equal(true);
-
+    expect(gain).to.equal("979185402960920127");
     await vendor1.connect(whitebit_signer).kill();
     await vendor1.vendorBid();
     await vendor1.vendorAsk();
