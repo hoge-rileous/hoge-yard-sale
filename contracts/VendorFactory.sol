@@ -13,7 +13,7 @@ interface ITokenVendor {
 
 contract VendorFactory is Context, Ownable{
 
-    event VendorCreated(address indexed creator, address indexed vendor);
+    event VendorCreated(address indexed token, address vendor);
     address vendorContract;
     mapping (address => uint8) tax;
     mapping (address => bool) supported;
@@ -34,7 +34,7 @@ contract VendorFactory is Context, Ownable{
         ITokenVendor(new_vendor).initialize(buyPrice, sellPrice, tokenAddress, tax[tokenAddress]);
         Ownable(new_vendor).transferOwnership(_msgSender());
         payable(new_vendor).transfer(msg.value);
-        emit VendorCreated(_msgSender(), new_vendor);
+        emit VendorCreated(tokenAddress, new_vendor);
     }    
 
 

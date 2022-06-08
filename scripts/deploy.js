@@ -19,13 +19,13 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    const HogeVendor = await ethers.getContractFactory("HogeVendor");
-    const hogeVendor = await HogeVendor.deploy();
-    await hogeVendor.deployed();
-  console.log("hogeVendor address:", hogeVendor.address);
+    const TokenVendor = await ethers.getContractFactory("TokenVendor");
+    const tokenVendor = await TokenVendor.deploy();
+    await tokenVendor.deployed();
+  console.log("hogeVendor address:", tokenVendor.address);
 
     const VendorFactory = await ethers.getContractFactory("VendorFactory");
-    const vendorFactory = await VendorFactory.deploy(hogeVendor.address);
+    const vendorFactory = await VendorFactory.deploy(tokenVendor.address);
     await vendorFactory.deployed();
 
   console.log("factory address:", vendorFactory.address);

@@ -34,6 +34,10 @@ module.exports = {
     ropsten: {
       url: process.env.ropstenAPI,
       accounts: [process.env.pk]
+    },
+    goerli: {
+      url: process.env.goerliAPI,
+      accounts: [process.env.pk]
     }
 
   },
