@@ -6,33 +6,21 @@
 
 HOGEVault is a framework for trustless over-the-counter HOGE trades. It functions as on-chain orderbook that achieves many of the advantages of a centralized exchange. Instead of routing volume through a single centralized liquidity pool, **Makers** set up *vendor contracts* with fixed buy and sell rates. **Takers** come along and make trades according to the available supply and rates.
 
-HogeVault has a number of advantages over UniSwap:
 
-* Buys and Sells happen at the same time, so instead of a 2% tax on each step, there is a single transfer.
-* The 2 parties *split the cost of the 2% tax*, meaning they both realize 99% of the value of their order.
-* No .3% swap fee for the Uniswap middle-man. HOGEVault has no profit model whatsoever.
-* Trades happen at a fixed rate, meaning price impact is 0% for any given trade.
-* Gas usage for buying HOGE 125,861, compared to ~250,000 for a Uniswap swap.
-* Gas usage for selling HOGE 106,138, compared to ~250,000 for a Uniswap swap.
-* Gas usage for creating vendor contract 167,447, compared to 294,589 for adding LP on Uniswap.
+# IMPORTANT:
 
-The only downside is the loss of automatic market-making / price discovery of the xy=k pool. But large HOGEVault Maker positions will create arbitrage opportunities that help stabilize the Uniswap pool.
+Bids and asks are set in units of WEI/TOKEN without any adjustment for decimals. In the unit test example the Bid/Ask are both set to "10" which represents a test case of 1 ETH per 100m HOGE.
 
-# HOW TO USE
+1 HOGE * (10 WEI/HOGE) = 10 WEI
 
-## Market Makers:
+10 WEI / (10 WEI/HOGE) = 1 HOGE
 
-First create a HogeVendor by calling createVendor(bidPrice, askPrice) on the VendorFactory. Use 0 if you don't want a double-sided order. Prices are in HOGE per ETH using whole numbers. Approximately 46,000,000 at time of writing.
+So 
 
-* Change your Ask order size by setting an allowance on the HOGE contract: HOGE.approve(vendor.address, amount_to_sell)
-* Change your Bid order size by sending ETH to the vendor contract or calling vendor.releaseFunds(amountToRemove).
+100000000000000000 HOGE = 1000000000000000000 WEI
 
-## Market Takers
+or (since HOGE has 9 decimals and ETH has 18)
 
-Takers first identify a vendor contract to interact with. The VendorFactory emits VendorCreated events. Then call vendorBid() and vendorAsk() on the individual vendors to get the overall order sizes.
+100,000,000.000000000 HOGE = 1.000000000000000000 ETH
 
-* Call buyQuote(amountETH) to find out how much HOGE the vendor will sell you.
-* Call buyHOGE() with that value on the message to execute the buy.
-* Call sellQuote(amountHOGE) to find out how much ETH the vendor will pay you.
-* Call sellHOGE(amountHOGE) to execute the sell. This requires an approve call to HOGE.approve(vendor.address, amountHOGE) in order to succeed.
-
+if 1 WEI is worth more than 1 TOKEN then this rate will be zero!! Do we ever expect this to happen?
