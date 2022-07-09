@@ -46,14 +46,14 @@ describe("VendorFactory", async (accounts) => {
     await hogeVendor.deployed();
 
     const VendorFactory = await ethers.getContractFactory("VendorFactory");
-    const vendorFactory = await VendorFactory.deploy(hogeVendor.address);
+    const vendorFactory = await VendorFactory.deploy();
     await vendorFactory.deployed();
 
-    await vendorFactory.addSupport(hogeAddr, 2);
+    await vendorFactory.addSupport(hogeAddr, hogeVendor.address);
 
     const bn_hoge = ethers.utils.parseUnits('100000000', 9);
 
-    const vendorAddressTxn = await vendorFactory.connect(whitebit_signer).createVendor('10', '10', hogeAddr, {value:ethers.utils.parseEther("1")});
+    const vendorAddressTxn = await vendorFactory.connect(whitebit_signer).createVendor('10000000000', '10000000000', hogeAddr, {value:ethers.utils.parseEther("1")});
     const vendorCreationRcpt = await vendorAddressTxn.wait();
     const createEvent = vendorCreationRcpt.events.find(event => event.event === 'VendorCreated');
     const rorihVendorAddress = createEvent.args.vendor;    
@@ -69,6 +69,7 @@ describe("VendorFactory", async (accounts) => {
 
     const ask = await vendor1.getAsk();
     const bid = await vendor1.getBid();
+
 
     const vendor2 = await ethers.getContractAt("TokenVendor", nickVendorAddress);
     const address2 = await vendor2.owner();
@@ -93,6 +94,7 @@ describe("VendorFactory", async (accounts) => {
     //This is the size of the Ask in ETH
     expect(ethValue).to.equal(oneEth);
 
+    console.log("got ask")
 
     //Larger order does not fill.
     const acct2_vendor1 = await vendor1.connect(accounts[2]);

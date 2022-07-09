@@ -25,10 +25,12 @@ async function main() {
   console.log("hogeVendor address:", tokenVendor.address);
 
     const VendorFactory = await ethers.getContractFactory("VendorFactory");
-    const vendorFactory = await VendorFactory.deploy(tokenVendor.address);
+    const vendorFactory = await VendorFactory.deploy();
     await vendorFactory.deployed();
 
   console.log("factory address:", vendorFactory.address);
+
+    await vendorFactory.addSupport("0xfAd45E47083e4607302aa43c65fB3106F1cd7607", tokenVendor.address);
 
 /*  vendors = [];
     const vendorAddressTxn = await vendorFactory.createVendor('50000000', '400000000');
@@ -52,7 +54,7 @@ async function main() {
 
   // We also save the contract's artifacts and address in the frontend directory
   //saveFrontendFiles(hogeVendor, vendorFactory, vendors);
-  saveFrontendFiles(hogeVendor, vendorFactory, []);
+  //saveFrontendFiles(hogeVendor, vendorFactory, []);
 }
 
 function saveFrontendFiles(hogeVendor, vendorFactory, vendors) {

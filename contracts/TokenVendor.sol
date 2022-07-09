@@ -9,23 +9,17 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 contract TokenVendor is OwnableUpgradeable {
 
     using SafeMath for uint256;
-    IERC20 token;
-    address payable constant dev = payable(0x133A5437951EE1D312fD36a74481987Ec4Bf8A96);
+    IERC20 constant token = IERC20(0xfAd45E47083e4607302aa43c65fB3106F1cd7607);
+    address payable constant dev = payable(0x50C26be2738220ED61b4aD795422F21FEeEa6A3C);
     uint bid;
     uint ask;
-    uint8 tax;
+    uint8 constant tax = 2;
     receive() external payable {}
 
-    function initialize(uint set_bidPrice, uint set_askPrice, address set_token, uint8 set_tax) public initializer {
+    function initialize(uint set_bidPrice, uint set_askPrice) public initializer {
         bid = set_bidPrice;
         ask = set_askPrice;
-        token = IERC20(set_token);
-        tax = set_tax;
         __Ownable_init();
-    }
-
-    function getToken() public view returns (address) {
-        return address(token);
     }
 
     function setBid(uint set_bidPrice) public onlyOwner() {
@@ -46,14 +40,14 @@ contract TokenVendor is OwnableUpgradeable {
         return ask;
     }
 
-    function taxed (uint amount) internal view returns (uint taxedAmount) {
+    function taxed (uint amount) internal pure returns (uint taxedAmount) {
         taxedAmount = amount.mul(100 - tax).div(100);
     }
 
     function bidSize() public view returns (uint amountToken, uint amountETH) {
         // Summarizes the ETH available for purchase
         if (bid == 0) return (0,0);
-        amountToken = address(this).balance.div(bid);
+        amountToken = address(this).balance.mul(10**9).div(bid);
         amountETH = address(this).balance;
     }
 
@@ -62,19 +56,19 @@ contract TokenVendor is OwnableUpgradeable {
         uint allowance = token.allowance(owner(), address(this));
         uint balance = token.balanceOf(owner());
         amountToken = (allowance > balance ? balance : allowance);
-        amountETH = amountToken.mul(ask);
+        amountETH = amountToken.mul(ask).div(10**9);
     }
 
     function buyQuote(uint amountETH) public view returns (uint amountToken) {
         //Converts ETH to token at the ask rate
-        amountToken = amountETH.div(ask);
+        amountToken = amountETH.mul(10**9).div(ask);
         (uint tokenForSale,) = askSize();
         require (amountToken <= tokenForSale, "Amount exceeds Ask size.");
     }
 
     function sellQuote(uint amountToken) public view returns (uint amountETH) {
         // Converts token to ETH at the bid rate
-        amountETH = bid == 0 ? 0 : amountToken.mul(bid);
+        amountETH = bid == 0 ? 0 : amountToken.mul(bid).div(10**9);
         require (amountETH <= address(this).balance, "Amount exceeds Bid size.");
     }
 
